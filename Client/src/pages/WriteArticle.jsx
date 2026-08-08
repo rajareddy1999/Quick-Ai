@@ -1,5 +1,12 @@
 import React, { useState } from 'react'
 import { Sparkles, Edit } from 'lucide-react'
+import axios from "axios"
+import { useAuth } from '@clerk/clerk-react';
+import toast from 'react-hot-toast';
+import Markdown from 'react-markdown';
+
+
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
 const WriteArticle = () => {
     const articleLengthOptions = [
@@ -10,12 +17,50 @@ const WriteArticle = () => {
 
     const [selectedLength, setSelectedLength] = useState(articleLengthOptions[0].value)
     const [articleTopic, setArticleTopic] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [content, setContent] = useState('')
+
+    const {getToken} = useAuth()
 
     const onSubmitHandler = async (e) => {
-        e.preventDefault()
-        console.log('Article Topic:', articleTopic)
-        console.log('Selected Length:', selectedLength)
+  e.preventDefault();
+
+  try {
+    setLoading(true);
+
+    const prompt = `Write a ${selectedLength} article about "${articleTopic}".`;
+        const { data } = await axios.post(
+        "/api/ai/generate-article",
+        {
+            prompt,
+            length: selectedLength,
+        },
+        {
+            headers: {
+            Authorization: `Bearer ${await getToken()}`,
+            },
+        }
+        );
+
+    if (data.success) {
+      setContent(data.content);
+      toast.success("Article generated successfully!");
+    } else {
+      toast.error(data.message);
     }
+  } catch (error) {
+    console.error(error);
+
+    toast.error(
+      error.response?.data?.message ||
+      error.message ||
+      "Failed to generate article."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
 
     return (
         <div className='h-full overflow-y-scroll p-6 flex items-start flex-wrap gap-4 text-slate-700'>
@@ -50,8 +95,11 @@ const WriteArticle = () => {
                     ))}
                 </select>
 
-                <button type="submit" className='mt-6 w-full bg-gradient-to-r from-[#4a7aff] to-[#9234EA] text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 cursor-pointer'>
-                    <Edit className='w-5' />
+                <button  disabled={loading} type="submit" className='mt-6 w-full bg-gradient-to-r from-[#4a7aff] to-[#9234EA] text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 cursor-pointer'>
+                    {
+                        loading ? <span className='w-4 h-4 my-1 rounded-full border-2 border-t-transparent animate-spin'></span>
+                        : <Edit className='w-5' />
+                    }
                     Generate Article
                 </button>
             </form>
@@ -62,14 +110,24 @@ const WriteArticle = () => {
                     <Edit className='w-5 h-5 text-[#4a7aff]' />
                     <h1 className='text-xl font-semibold'>Generated Article</h1>
                 </div>
-                
-                <div className='flex-1 flex justify-center items-center'>
+                {!content ? ( 
+                    <div className='flex-1 flex justify-center items-center'>
                     {/* Added items-center here so the icon aligns with the text */}
-                    <div className='text-sm text-gray-400 text-center gap-5 flex flex-col items-center'>
-                        <Edit className='w-9 h-9 text-[#4a7aff]' />
-                        <p>Click on "Generate Article" to create your content.</p>
+                         <div className='text-sm text-gray-400 text-center gap-5 flex flex-col items-center'>
+                             <Edit className='w-9 h-9 text-[#4a7aff]' />
+                             <p>Click on "Generate Article" to create your content.</p>
+                         </div>
                     </div>
-                </div>
+                ) :  (
+                        <div className='mt-3 h-full overflow-y-scroll text-sm text-slate-600'>
+                        <div className='reset-tw'>
+                            <Markdown>{content}</Markdown>
+                        </div>
+                            
+                        </div>
+
+                 )}
+                
             </div>
         </div>
     )

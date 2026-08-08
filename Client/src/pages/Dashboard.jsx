@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { Gem } from 'lucide-react'
 import CreationItem from '../components/Creationitem'
-import markdown from 'react-markdown'
-import reactMarkdown from 'react-markdown'
 import { Protect } from '@clerk/clerk-react'
 
 
@@ -38,7 +36,7 @@ const Dashboard = () => {
           <div className='text-slate-600'>
             <p className='text-sm'>Active Plan</p>
             <h2 className='text-xl font-semibold'>
-              <protect plan="premium" fallback = "Free">Premium</protect>
+              <Protect plan="premium" fallback="Free">Premium</Protect>
             </h2>
           </div>
           <div className='w-10 h-10 rounded-b-lg bg-gradient-to-br from-[#ff61c5] to-[#9e53ee] text-white flex justify-center items-center'>
